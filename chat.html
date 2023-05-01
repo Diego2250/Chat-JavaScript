@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <script type="application/javascript">
+      const chatContainer = document.createElement('div')
+      chatContainer.id = 'chat-container'
+      chatContainer.style.display = 'flex'
+      chatContainer.style.flexDirection = 'column'
+      chatContainer.style.height = '100%'
+      chatContainer.style.padding = '0px'
+
+      const messageContainer = document.createElement('div')
+      messageContainer.id = 'message-container'
+      messageContainer.style.flexGrow = '1'
+      messageContainer.style.overflowY = 'auto'
+
+      const messageForm = document.createElement('form')
+      messageForm.id = 'message-form'
+      messageForm.style.display = 'flex'
+      messageForm.style.width = '100%'
+
+      const messageInput = document.createElement('input')
+      messageInput.id = 'message-input'
+      messageInput.type = 'text'
+      messageInput.placeholder = 'Escribe aquí tu mensaje'
+      messageInput.style.flexGrow = '1'
+      messageInput.style.marginRight = '10px'
+      messageInput.style.borderRadius = '5px'
+      messageInput.style.border = '1px solid black'
+      messageInput.style.padding = '5px'
+      messageInput.maxLength = 140; // Establecemos el máximo de 140 caracteres
+      
+
+      const sendButton = document.createElement('button')
+      sendButton.id = 'send-button'
+      sendButton.type = 'submit'
+      sendButton.style.padding = '10px'
+      sendButton.style.border = 'none'
+      sendButton.style.backgroundColor = '#4CAF50'
+      sendButton.style.color = 'white'
+      sendButton.style.fontWeight = 'bold'
+      sendButton.style.borderRadius = '5px'
+      sendButton.append('Enviar')
+
+      const title = document.createElement('h1')
+      title.textContent = 'CHAT UVGENIOS'
+      title.style.textAlign = 'center'
+      title.style.fontSize = '36px'
+      title.style.marginTop = '0'
+      title.style.marginBottom = '20px'
+
+      const messageFormContainer = document.createElement('div')
+      messageFormContainer.style.position = 'fixed'
+      messageFormContainer.style.bottom = '0'
+      messageFormContainer.style.display = 'flex'
+      messageFormContainer.style.width = '99%'
+      messageFormContainer.style.background = '#fff'
+
+      const charCountSpan = document.createElement('span');
+      charCountSpan.id = 'char-count';
+      charCountSpan.style.alignContent = 'right';
+      charCountSpan.textContent = '0/140';
+      charCountSpan.style.fontSize = '12px';
+      charCountSpan.style.color = 'gray';
+
+
+
+      messageForm.append(messageInput)
+      messageForm.append(charCountSpan)
+      messageForm.append(sendButton)
+
+
+
+      messageFormContainer.append(messageForm)
+
+      chatContainer.prepend(title)
+      chatContainer.append(messageContainer)
+      chatContainer.append(messageFormContainer)
+
+      document.body.append(chatContainer)
+
+
+      messageInput.addEventListener('input', () => {
+        const charsLeft = messageInput.value.length;
+        charCountSpan.textContent = `${charsLeft}/140`;
+     }); 
+
+      messageForm.addEventListener('submit', async (event) => {
+        event.preventDefault(); // Evitamos que el formulario se envíe por defecto
+        await postMessage(messageInput.value)
+        messageInput.value = ''
+        getMessages()
+        //autoscroll down to the last message
+
+     });      
+
+
+      const Message = (text, user) => {
+        const div = document.createElement('div')
+        div.style.marginBottom = '10px'
+
+
+      //verificar si la cadena es una url, una imagen o un video
+      //primero verificar si es imagen 
+      if (text.endsWith('.jpg') || text.endsWith('.png') || text.endsWith('.gif') || text.endsWith('.jpeg') || text.endsWith('.gif') ) {
+        const imagen = document.createElement('img')
+        imagen.src = text
+        imagen.style.width = '300px'
+        div.append(imagen)
+      }else if (text.endsWith('.mp4') || text.endsWith('.avi') || text.endsWith('.mov') || text.endsWith('.wmv')) {
+        const video = document.createElement('video')
+        video.src = text
+        video.style.width = '300px'
+        video.controls = true
+        div.append(video)
+      }else if (text.startsWith('http://') || text.startsWith('https://') || text.startsWith('www.')) {
+        iframe = document.createElement('iframe')
+        btn_abrir = document.createElement('button')
+        btn_abrir.textContent = 'Abrir enlace'
+        iframe.src = text
+        iframe.style.width = '50%'
+        iframe.style.height = '50%'
+        iframe.style.border = '1px solid black'
+        iframe.scrolling = 'yes'
+        
+        btn_abrir.style.marginTop = '10px'
+        btn_abrir.style.border = 'none'
+        btn_abrir.style.transform = 'translateY(-50%) translateX(50%)'
+        btn_abrir.style.backgroundColor = '#0074D9'
+        btn_abrir.style.color = 'white'
+        btn_abrir.style.fontWeight = 'bold'
+        btn_abrir.style.textAlign = 'center'
+        btn_abrir.style.width = '100px'
+        btn_abrir.style.height = '40px'
+        btn_abrir.style.borderRadius = '20px'
+
+        iframe.addEventListener('click', () => {
+          window.open(text, '_blank')
+        })
+
+        btn_abrir.addEventListener('click', () => {
+          window.open(text, '_blank')
+        })
+
+        div.append(iframe)
+        div.append(btn_abrir)       
+      }
+      else {
+        const userSpan = document.createElement('span')
+        userSpan.append(`${user}: `)
+        userSpan.style.fontWeight = 'bold'
+        div.append(userSpan)
+        div.append(text)
+
+        }
+        return div
+      }
+
+      const getMessages = async () => {
+        const response = await fetch('http://uvgenios.online/api/messages')
+        const messages = await response.json()
+        
+        messageContainer.innerHTML = ''
+        messages.forEach((message) => {
+          const div = Message(message.text, message.user)
+          messageContainer.append(div)
+        })
+        window.scrollTo(0,document.body.scrollHeight);      
+      }
+
+      const postMessage = async (text) => {
+        const body = {
+          text,
+          user: 'Mora'
+        }
+        const response = await fetch('http://uvgenios.online/api/messages', {
+          method: 'POST',
+          body: JSON.stringify(body),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        return response
+      }
+
+      getMessages()
+
+
+    </script>
+  </body>
+</html>
